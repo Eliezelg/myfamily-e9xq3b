@@ -1,0 +1,240 @@
+syntax = "proto3";
+
+package myfamily.gazette;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// Comprehensive gazette service definition with enhanced print and shipping capabilities
+service GazetteService {
+  // Creates a new gazette with comprehensive layout and print specifications
+  rpc CreateGazette(CreateGazetteRequest) returns (CreateGazetteResponse);
+  
+  // Retrieves gazette by ID with detailed status and specifications
+  rpc GetGazette(GetGazetteRequest) returns (GetGazetteResponse);
+  
+  // Submits gazette for printing with detailed print specifications
+  rpc SubmitForPrinting(SubmitPrintRequest) returns (SubmitPrintResponse);
+  
+  // Comprehensive shipment tracking across international regions
+  rpc TrackShipment(TrackShipmentRequest) returns (TrackShipmentResponse);
+}
+
+// Core gazette status enumeration aligned with interface definition
+enum GazetteStatus {
+  GAZETTE_STATUS_UNSPECIFIED = 0;
+  GAZETTE_STATUS_DRAFT = 1;
+  GAZETTE_STATUS_PROCESSING = 2;
+  GAZETTE_STATUS_READY_FOR_PRINT = 3;
+  GAZETTE_STATUS_PRINTING = 4;
+  GAZETTE_STATUS_SHIPPED = 5;
+  GAZETTE_STATUS_DELIVERED = 6;
+  GAZETTE_STATUS_ERROR = 7;
+}
+
+// Print-ready page size specifications (ISO 216)
+enum PageSize {
+  PAGE_SIZE_UNSPECIFIED = 0;
+  PAGE_SIZE_A4 = 1; // 210×297mm
+}
+
+// Professional print color space
+enum ColorSpace {
+  COLOR_SPACE_UNSPECIFIED = 0;
+  COLOR_SPACE_CMYK = 1; // Fogra39 profile
+}
+
+// Professional binding specifications
+enum BindingType {
+  BINDING_TYPE_UNSPECIFIED = 0;
+  BINDING_TYPE_PERFECT = 1; // Perfect binding for durability
+}
+
+// Comprehensive gazette message with all required fields
+message GazetteMessage {
+  string id = 1;
+  string family_id = 2;
+  GazetteStatus status = 3;
+  GazetteLayout layout = 4;
+  PrintSpecifications print_specifications = 5;
+  ShippingDetails shipping_details = 6;
+  repeated string content_ids = 7;
+  ValidationResults validation_results = 8;
+  string generated_url = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+// Print-ready layout specifications
+message GazetteLayout {
+  PageSize page_size = 1;
+  ColorSpace color_space = 2;
+  int32 resolution = 3; // DPI (minimum 300)
+  int32 bleed = 4; // mm (standard 3mm)
+  BindingType binding = 5;
+  repeated PageContent pages = 6;
+}
+
+// Detailed page content structure
+message PageContent {
+  int32 page_number = 1;
+  string content_id = 2;
+  ContentType content_type = 3;
+  Position position = 4;
+  Dimensions dimensions = 5;
+}
+
+// Content type enumeration
+enum ContentType {
+  CONTENT_TYPE_UNSPECIFIED = 0;
+  CONTENT_TYPE_IMAGE = 1;
+  CONTENT_TYPE_TEXT = 2;
+}
+
+// Position coordinates
+message Position {
+  float x = 1;
+  float y = 2;
+}
+
+// Content dimensions
+message Dimensions {
+  float width = 1;
+  float height = 2;
+}
+
+// Professional print specifications
+message PrintSpecifications {
+  string paper_stock_interior = 1; // 150gsm
+  string paper_stock_cover = 2; // 250gsm
+  bool acid_free = 3;
+  ColorProfile color_profile = 4;
+  QualityChecks quality_checks = 5;
+}
+
+// Color profile specifications
+message ColorProfile {
+  string profile_name = 1; // e.g., "Fogra39"
+  bytes icc_profile = 2;
+}
+
+// Quality validation checks
+message QualityChecks {
+  bool resolution_check = 1;
+  bool color_space_check = 2;
+  bool bleed_check = 3;
+  bool font_embedding_check = 4;
+}
+
+// Comprehensive validation results
+message ValidationResults {
+  bool is_valid = 1;
+  repeated ValidationError errors = 2;
+  repeated ValidationWarning warnings = 3;
+}
+
+// Validation error details
+message ValidationError {
+  string code = 1;
+  string message = 2;
+  string field = 3;
+}
+
+// Validation warning details
+message ValidationWarning {
+  string code = 1;
+  string message = 2;
+  string field = 3;
+}
+
+// International shipping details
+message ShippingDetails {
+  string tracking_id = 1;
+  string carrier = 2;
+  ShippingRegion region = 3;
+  Address delivery_address = 4;
+  ShipmentStatus status = 5;
+  google.protobuf.Timestamp estimated_delivery = 6;
+}
+
+// Supported shipping regions
+enum ShippingRegion {
+  SHIPPING_REGION_UNSPECIFIED = 0;
+  SHIPPING_REGION_ISRAEL = 1;
+  SHIPPING_REGION_EUROPE = 2;
+  SHIPPING_REGION_NORTH_AMERICA = 3;
+  SHIPPING_REGION_AUSTRALIA = 4;
+}
+
+// Detailed shipping status
+enum ShipmentStatus {
+  SHIPMENT_STATUS_UNSPECIFIED = 0;
+  SHIPMENT_STATUS_PROCESSING = 1;
+  SHIPMENT_STATUS_IN_TRANSIT = 2;
+  SHIPMENT_STATUS_OUT_FOR_DELIVERY = 3;
+  SHIPMENT_STATUS_DELIVERED = 4;
+  SHIPMENT_STATUS_EXCEPTION = 5;
+}
+
+// International address format
+message Address {
+  string recipient_name = 1;
+  string street_address = 2;
+  string city = 3;
+  string state = 4;
+  string postal_code = 5;
+  string country = 6;
+  string phone = 7;
+}
+
+// Request/Response messages for service methods
+message CreateGazetteRequest {
+  string family_id = 1;
+  GazetteLayout layout = 2;
+  PrintSpecifications print_specifications = 3;
+  repeated string content_ids = 4;
+}
+
+message CreateGazetteResponse {
+  GazetteMessage gazette = 1;
+  ValidationResults validation_results = 2;
+}
+
+message GetGazetteRequest {
+  string gazette_id = 1;
+  bool include_validation_details = 2;
+}
+
+message GetGazetteResponse {
+  GazetteMessage gazette = 1;
+}
+
+message SubmitPrintRequest {
+  string gazette_id = 1;
+  PrintSpecifications print_specifications = 2;
+  ShippingDetails shipping_details = 3;
+}
+
+message SubmitPrintResponse {
+  string print_job_id = 1;
+  google.protobuf.Timestamp estimated_completion = 2;
+  repeated ValidationWarning warnings = 3;
+}
+
+message TrackShipmentRequest {
+  string tracking_id = 1;
+  string locale = 2;
+}
+
+message TrackShipmentResponse {
+  ShippingDetails shipping_details = 1;
+  repeated ShipmentEvent events = 2;
+}
+
+// Detailed shipment tracking events
+message ShipmentEvent {
+  string event_code = 1;
+  string description = 2;
+  string location = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
