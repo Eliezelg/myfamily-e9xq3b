@@ -1,0 +1,134 @@
+# Grafana Helm Chart Values v6.50.0
+# Configuration for MyFamily platform monitoring and visualization
+
+# Deployment replicas for high availability
+replicas: 2
+
+# Container image configuration
+image:
+  repository: grafana/grafana
+  tag: 9.3.2
+  pullPolicy: IfNotPresent
+
+# Persistent storage configuration
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: gp3-encrypted
+
+# Resource allocation and limits
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+# Data sources configuration
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      # Prometheus data source for metrics
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-server.system.svc.cluster.local
+        access: proxy
+        isDefault: true
+        jsonData:
+          timeInterval: 30s
+          queryTimeout: 60s
+          httpMethod: POST
+          manageAlerts: true
+
+      # Elasticsearch data source for logs
+      - name: ElasticSearch
+        type: elasticsearch
+        url: http://elasticsearch-master.system.svc.cluster.local:9200
+        access: proxy
+        jsonData:
+          index: myfamily-*
+          timeField: "@timestamp"
+          logMessageField: message
+          logLevelField: level
+
+# Dashboard providers configuration
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      # Platform metrics dashboards
+      - name: platform
+        folder: Platform
+        type: file
+        disableDeletion: true
+        editable: true
+        updateIntervalSeconds: 30
+        options:
+          path: /var/lib/grafana/dashboards/platform
+
+      # Business metrics dashboards
+      - name: business
+        folder: Business
+        type: file
+        disableDeletion: true
+        editable: true
+        updateIntervalSeconds: 30
+        options:
+          path: /var/lib/grafana/dashboards/business
+
+# Pre-configured dashboards
+dashboards:
+  platform:
+    platform-overview:
+      json:
+        title: MyFamily Platform Overview
+        uid: platform-overview
+        panels:
+          # Platform uptime monitoring
+          - title: Platform Uptime
+            type: gauge
+            datasource: Prometheus
+            targets:
+              - expr: 'avg_over_time(up[24h]) * 100'
+                legendFormat: 'Uptime %'
+
+          # API response time monitoring
+          - title: API Response Times
+            type: graph
+            datasource: Prometheus
+            targets:
+              - expr: 'rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])'
+                legendFormat: '{{endpoint}}'
+
+          # Error rate monitoring
+          - title: Error Rates
+            type: timeseries
+            datasource: Prometheus
+            targets:
+              - expr: 'sum(rate(http_requests_total{status=~"5.."}[5m])) by (service) / sum(rate(http_requests_total[5m])) by (service)'
+                legendFormat: '{{service}}'
+
+# Ingress configuration
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - grafana.myfamily.com
+  tls:
+    - secretName: grafana-tls
+      hosts:
+        - grafana.myfamily.com
+
+# Network policy configuration
+networkPolicy:
+  enabled: true
+  ingress:
+    allowed:
+      - namespaces:
+          - production
+          - staging
+          - system
