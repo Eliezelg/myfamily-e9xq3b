@@ -1,0 +1,57 @@
+# cert-manager Helm values configuration
+# Version: 1.12.3
+
+# Install Custom Resource Definitions (CRDs)
+installCRDs: true
+
+# Global configuration
+global:
+  # Leader election settings
+  leaderElection:
+    # Use system namespace for leader election
+    namespace: system
+
+# High availability configuration
+replicaCount: 3
+
+# Resource allocation
+resources:
+  limits:
+    cpu: "200m"
+    memory: "256Mi"
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+
+# Prometheus monitoring integration
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: true
+    namespace: monitoring
+    interval: "30s"
+
+# Additional arguments for enhanced security and DNS configuration
+extraArgs:
+  # Configure public DNS servers for DNS01 challenges
+  - --dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53
+  # Enable certificate owner references for better resource management
+  - --enable-certificate-owner-ref=true
+
+# Pod security context for enhanced security
+podSecurityContext:
+  # Run as non-root user
+  fsGroup: 1001
+  runAsUser: 1001
+  runAsNonRoot: true
+
+# Container security context for hardening
+containerSecurityContext:
+  # Prevent privilege escalation
+  allowPrivilegeEscalation: false
+  capabilities:
+    # Drop all capabilities for minimal attack surface
+    drop:
+      - ALL
+  # Read-only root filesystem for improved security
+  readOnlyRootFilesystem: true
