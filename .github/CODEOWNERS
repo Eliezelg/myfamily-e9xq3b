@@ -1,0 +1,34 @@
+*                                               @global-maintainers
+
+# Backend Services
+src/backend/src/api-gateway/                    @backend-team @api-owners
+src/backend/src/auth-service/                   @backend-team @security-team
+src/backend/src/content-service/                @backend-team @content-team
+src/backend/src/gazette-service/                @backend-team @gazette-team
+src/backend/src/payment-service/                @backend-team @payment-team @security-team
+src/backend/src/worker-service/                 @backend-team @worker-team
+src/backend/src/shared/                         @backend-team @architecture-team
+
+# Service-specific security and config directories
+src/backend/src/*/security/                     @security-team
+src/backend/src/*/config/                       @devops-team @security-team
+
+# Frontend Applications
+src/web/                                        @frontend-team @accessibility-team
+src/web/mobile/                                 @mobile-team @accessibility-team
+
+# Infrastructure and DevOps
+infrastructure/                                 @devops-team @security-team
+.github/workflows/                              @devops-team @ci-team @security-team
+
+# API Definitions
+*.proto                                         @backend-team @api-owners @architecture-team
+
+# Dependencies and Security
+package.json                                    @dependency-managers @security-team
+
+# Testing
+*.test.ts                                       @qa-team @test-automation-team
+
+# Documentation
+docs/                                           @documentation-team @architecture-team
