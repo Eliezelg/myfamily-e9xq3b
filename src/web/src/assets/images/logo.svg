@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="240" height="240" viewBox="0 0 240 240" version="1.1" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MyFamily Logo">
+    <title>MyFamily Logo</title>
+    <defs>
+        <clipPath id="circular-clip">
+            <circle cx="120" cy="120" r="116"/>
+        </clipPath>
+    </defs>
+    
+    <!-- Background Circle -->
+    <circle cx="120" cy="120" r="116" fill="#2196F3" stroke="#FFC107" stroke-width="2"/>
+    
+    <!-- Family Group Silhouette -->
+    <g fill-rule="evenodd" clip-rule="evenodd" clip-path="url(#circular-clip)">
+        <!-- Elderly Figure (Centered) -->
+        <path d="M120 60
+                a20 20 0 0 1 0 40
+                a20 20 0 0 1 0 -40
+                M100 120
+                q40 -10 40 0
+                v50
+                h-40
+                v-50" 
+              fill="#FFC107"/>
+        
+        <!-- Adult Figure (Left) -->
+        <path d="M70 80
+                a15 15 0 0 1 0 30
+                a15 15 0 0 1 0 -30
+                M55 125
+                q30 -8 30 0
+                v40
+                h-30
+                v-40" 
+              fill="#FFC107"/>
+        
+        <!-- Adult Figure (Right) -->
+        <path d="M170 80
+                a15 15 0 0 1 0 30
+                a15 15 0 0 1 0 -30
+                M155 125
+                q30 -8 30 0
+                v40
+                h-30
+                v-40" 
+              fill="#FFC107"/>
+        
+        <!-- Child Figure (Left) -->
+        <path d="M40 100
+                a10 10 0 0 1 0 20
+                a10 10 0 0 1 0 -20
+                M30 130
+                q20 -5 20 0
+                v30
+                h-20
+                v-30" 
+              fill="#FFC107"/>
+        
+        <!-- Child Figure (Right) -->
+        <path d="M200 100
+                a10 10 0 0 1 0 20
+                a10 10 0 0 1 0 -20
+                M190 130
+                q20 -5 20 0
+                v30
+                h-20
+                v-30" 
+              fill="#FFC107"/>
+    </g>
+    
+    <!-- Connecting Lines -->
+    <g stroke="#FFC107" stroke-width="2" fill="none">
+        <path d="M120 100 L70 110"/>
+        <path d="M120 100 L170 110"/>
+        <path d="M70 110 L40 120"/>
+        <path d="M170 110 L200 120"/>
+    </g>
+    
+    <!-- Heart Symbol -->
+    <path d="M110 160
+            a10 10 0 0 1 20 0
+            a10 10 0 0 1 20 10
+            q0 10 -30 25
+            q-30 -15 -30 -25
+            a10 10 0 0 1 20 -10" 
+          fill="#FFC107"/>
+</svg>
