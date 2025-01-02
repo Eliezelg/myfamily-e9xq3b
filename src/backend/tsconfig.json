@@ -1,0 +1,66 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "lib": [
+      "ES2022"
+    ],
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["src/shared/*"],
+      "@api-gateway/*": ["src/api-gateway/src/*"],
+      "@auth-service/*": ["src/auth-service/src/*"],
+      "@content-service/*": ["src/content-service/src/*"],
+      "@gazette-service/*": ["src/gazette-service/src/*"],
+      "@payment-service/*": ["src/payment-service/src/*"],
+      "@worker-service/*": ["src/worker-service/src/*"]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "allowSyntheticDefaultImports": true,
+    "incremental": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "composite": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "pretty": true,
+    "removeComments": false,
+    "preserveConstEnums": true,
+    "newLine": "lf",
+    "allowJs": false,
+    "checkJs": false,
+    "importHelpers": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ],
+  "references": [
+    { "path": "./src/shared" },
+    { "path": "./src/api-gateway" },
+    { "path": "./src/auth-service" },
+    { "path": "./src/content-service" },
+    { "path": "./src/gazette-service" },
+    { "path": "./src/payment-service" },
+    { "path": "./src/worker-service" }
+  ]
+}
