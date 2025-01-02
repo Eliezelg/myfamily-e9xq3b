@@ -1,0 +1,139 @@
+# Authentication Service Helm Values
+# Version: 1.0.0
+# Enhanced security and high-availability configuration for production deployment
+
+replicaCount: 3
+
+image:
+  repository: myfamily/auth-service
+  tag: latest
+  pullPolicy: Always
+
+nameOverride: "auth-service"
+fullnameOverride: "myfamily-auth-service"
+
+service:
+  type: ClusterIP
+  port: 3001
+  targetPort: 3001
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+  tls:
+    - secretName: auth-tls-secret
+      hosts:
+        - auth.myfamily.com
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+
+env:
+  NODE_ENV: production
+  AUTH_SERVICE_PORT: "3001"
+  JWT_EXPIRES_IN: "24h"
+  JWT_ALGORITHM: "HS256"
+  JWT_REFRESH_EXPIRES_IN: "7d"
+  RATE_LIMIT_WINDOW: "15m"
+  RATE_LIMIT_MAX_REQUESTS: "100"
+
+secrets:
+  jwt:
+    secretName: auth-jwt-secret
+    secretKey: JWT_SECRET
+    rotationSchedule: "720h"
+  oauth:
+    secretName: auth-oauth-secret
+    googleClientId: GOOGLE_CLIENT_ID
+    googleClientSecret: GOOGLE_CLIENT_SECRET
+    googleCallbackUrl: GOOGLE_CALLBACK_URL
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+podSecurityContext:
+  fsGroup: 1000
+  supplementalGroups:
+    - 1000
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3001
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 3001
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
+
+networkPolicy:
+  enabled: true
+  ingressRules:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: production
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api-gateway
+      ports:
+        - port: 3001
+          protocol: TCP
+  egressRules:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: production
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - port: 6379
+          protocol: TCP
