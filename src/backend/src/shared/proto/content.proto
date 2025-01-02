@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+// google/protobuf v3.0
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+package myfamily.content;
+
+// Types of content supported by the platform
+enum ContentType {
+  PHOTO = 0;
+  TEXT = 1;
+  GAZETTE_COVER = 2;
+  GAZETTE_CONTENT = 3;
+}
+
+// Processing status of content items
+enum ContentStatus {
+  PENDING = 0;
+  PROCESSING = 1;
+  READY = 2;
+  ERROR = 3;
+  PRINT_READY = 4;
+}
+
+// Supported color spaces for content
+enum ColorSpace {
+  RGB = 0;
+  CMYK = 1;
+  GRAYSCALE = 2;
+}
+
+// Content item representation with print-ready capabilities
+message Content {
+  string id = 1;
+  string family_id = 2;
+  string creator_id = 3;
+  ContentType type = 4;
+  string url = 5;
+  ContentMetadata metadata = 6;
+  repeated ContentTranslation translations = 7;
+  ContentStatus status = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  PrintValidation print_validation = 11;
+}
+
+// Enhanced metadata for content items including print specifications
+message ContentMetadata {
+  int32 width = 1;
+  int32 height = 2;
+  string format = 3;
+  int64 size = 4;
+  int32 dpi = 5;
+  ColorSpace color_space = 6;
+  string color_profile = 7;
+  int32 compression_quality = 8;
+  bool print_ready = 9;
+  google.protobuf.FloatValue bleed_mm = 10;
+}
+
+// Print-specific validation results
+message PrintValidation {
+  bool meets_dpi = 1;
+  bool meets_color_space = 2;
+  bool meets_size = 3;
+  repeated string validation_errors = 4;
+}
+
+// Content translation for multi-language support
+message ContentTranslation {
+  string language_code = 1;
+  string translated_text = 2;
+  google.protobuf.Timestamp translated_at = 3;
+}
+
+// Request message for creating new content
+message CreateContentRequest {
+  string family_id = 1;
+  string creator_id = 2;
+  ContentType type = 3;
+  bytes content_data = 4;
+  map<string, string> metadata = 5;
+}
+
+// Request message for retrieving content
+message GetContentRequest {
+  string content_id = 1;
+  string family_id = 2;
+}
+
+// Request message for listing content
+message ListContentRequest {
+  string family_id = 1;
+  ContentType type = 2;
+  ContentStatus status = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+}
+
+// Response message for listing content
+message ListContentResponse {
+  repeated Content content = 1;
+  string next_page_token = 2;
+  int32 total_count = 3;
+}
+
+// Request message for print validation
+message ValidatePrintRequest {
+  string content_id = 1;
+  string family_id = 2;
+}
+
+// Enhanced gRPC service for content management with print capabilities
+service ContentService {
+  // Creates new content item with print validation
+  rpc CreateContent(CreateContentRequest) returns (Content) {}
+
+  // Retrieves specific content item
+  rpc GetContent(GetContentRequest) returns (Content) {}
+
+  // Lists content items for a family
+  rpc ListContent(ListContentRequest) returns (ListContentResponse) {}
+
+  // Validates content for print readiness
+  rpc ValidateForPrint(ValidatePrintRequest) returns (PrintValidation) {}
+}
