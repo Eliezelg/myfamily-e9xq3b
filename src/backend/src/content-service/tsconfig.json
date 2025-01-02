@@ -1,0 +1,36 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": "./src",
+    "paths": {
+      "@shared/*": ["../../../shared/*"],
+      "@models/*": ["models/*"],
+      "@services/*": ["services/*"],
+      "@controllers/*": ["controllers/*"],
+      "@config/*": ["config/*"],
+      "@utils/*": ["utils/*"],
+      "@types/*": ["types/*"],
+      "@middlewares/*": ["middlewares/*"],
+      "@storage/*": ["storage/*"],
+      "@processors/*": ["processors/*"]
+    },
+    "types": [
+      "node",
+      "jest",
+      "express",
+      "aws-sdk"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__mocks__/*"
+  ]
+}
