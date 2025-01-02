@@ -1,0 +1,92 @@
+node_modules
+.npm
+.yarn
+
+# Build artifacts
+dist
+coverage
+
+# Development files
+test
+.git
+.aws
+.ssh
+.env*
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+README.md
+.eslintrc*
+.prettierrc*
+jest.config.*
+nodemon.json
+docker-compose*
+
+# Security sensitive files
+**/*.cert
+**/*.password
+**/*.key
+**/*.pem
+
+# IDE and editor files
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Package manager files
+package-lock.json
+yarn.lock
+.yarnrc
+.npmrc
+
+# TypeScript source maps
+*.map
+
+# Debug files
+.clinic
+.nyc_output
+
+# Local development configurations
+.env.local
+.env.development
+.env.test
+
+# Prisma
+prisma/*.db
+prisma/migrations
+
+# Kubernetes
+k8s/
+*.yaml
+*.yml
+
+# Documentation
+docs/
+*.md
+
+# Backup files
+*.bak
+*.backup
+
+# Miscellaneous
+.dockerignore
+.editorconfig
+.travis.yml
+.circleci
+.github
