@@ -1,0 +1,200 @@
+# Payment Service Helm Values Configuration
+# Version: 1.0.0
+# Bitnami Common Chart Version: 2.2.3
+
+# Core deployment configuration
+image:
+  repository: myfamily/payment-service
+  tag: latest
+  pullPolicy: Always
+  pullSecrets:
+    - registry-credentials
+
+nameOverride: "payment-service"
+fullnameOverride: "payment-service"
+
+replicaCount: 3
+
+# Service account configuration
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/payment-service-role
+    iam.gke.io/gcp-service-account: payment-service@${PROJECT_ID}.iam.gserviceaccount.com
+  automountServiceAccountToken: true
+
+# Pod annotations for monitoring and secrets
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9464"
+  prometheus.io/path: "/metrics"
+  vault.hashicorp.com/agent-inject: "true"
+  vault.hashicorp.com/role: "payment-service"
+  vault.hashicorp.com/agent-pre-populate-only: "true"
+
+# Enhanced security context for pods
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container security context
+securityContext:
+  capabilities:
+    drop: ["ALL"]
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    http:
+      port: 3004
+      targetPort: 3004
+      protocol: TCP
+    metrics:
+      port: 9464
+      targetPort: 9464
+      protocol: TCP
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 1500m
+    memory: 2Gi
+  requests:
+    cpu: 750m
+    memory: 1Gi
+
+# Horizontal pod autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 15
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+
+# Node selection and scheduling
+nodeSelector:
+  kubernetes.io/role: payment
+  node.kubernetes.io/instance-type: c5.xlarge
+
+# Pod tolerations
+tolerations:
+  - key: payment
+    operator: Exists
+    effect: NoSchedule
+
+# Advanced pod affinity rules
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: payment-service
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/role
+              operator: In
+              values:
+                - payment
+
+# Environment variables
+env:
+  NODE_ENV: production
+  PORT: "3004"
+  METRICS_PORT: "9464"
+  MONGODB_URI: mongodb://payment-mongodb:27017/payment
+  REDIS_URI: redis://payment-redis:6379
+  STRIPE_API_VERSION: "2023-10-16"
+  AWS_REGION: us-east-1
+  PAYMENT_PROCESSORS: stripe,tranzillia
+  MAX_RETRIES: "3"
+  RETRY_DELAY_MS: "1000"
+  CONNECTION_TIMEOUT_MS: "5000"
+  IDLE_TIMEOUT_MS: "10000"
+
+# Sensitive configuration (to be populated by Vault)
+secrets:
+  stripe:
+    secretKey: ""
+    publicKey: ""
+    webhookSecret: ""
+  tranzillia:
+    terminalId: ""
+    apiKey: ""
+    apiUrl: ""
+
+# Health check probes
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3004
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 3004
+  initialDelaySeconds: 20
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+# Prometheus metrics configuration
+metrics:
+  serviceMonitor:
+    enabled: true
+    interval: "15s"
+    scrapeTimeout: "10s"
+    labels:
+      release: prometheus
+    endpoints:
+      - port: metrics
+        path: /metrics
+        interval: "15s"
+
+# Network policies
+networkPolicy:
+  enabled: true
+  ingressRules:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api-gateway
+      ports:
+        - port: 3004
+          protocol: TCP
+  egressRules:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: payment-mongodb
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: payment-redis
