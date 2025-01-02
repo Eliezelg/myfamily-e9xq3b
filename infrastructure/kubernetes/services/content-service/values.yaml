@@ -1,0 +1,166 @@
+# Content Service Helm Values
+# Version: 1.0.0
+# Default values for content-service deployment
+
+replicaCount: 3
+
+image:
+  repository: myfamily/content-service
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: registry-credentials
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/content-service-role
+  name: content-service
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  fluentbit.io/parser: "json"
+  backup.velero.io/backup-volumes: content-data
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+
+service:
+  type: ClusterIP
+  port: 3000
+  metrics:
+    port: 9090
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9090"
+
+resources:
+  limits:
+    cpu: "2"
+    memory: 4Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector:
+  purpose: app
+  workload: content-processing
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - content-service
+          topologyKey: kubernetes.io/hostname
+
+env:
+  NODE_ENV: production
+  PORT: "3000"
+  AWS_REGION: us-east-1
+  AWS_S3_BUCKET: myfamily-content
+  SHARP_CONCURRENCY: "4"
+  MAX_FILE_SIZE: 25MB
+  ALLOWED_FORMATS: jpg,jpeg,png
+  PRINT_DPI: "300"
+  PRINT_COLOR_PROFILE: Fogra39
+  CONTENT_RETENTION_DAYS: "730"
+  BACKUP_ENABLED: "true"
+  COMPRESSION_QUALITY: "85"
+
+configMap:
+  name: content-service-config
+  data:
+    sharp-config.json:
+      jpeg:
+        quality: 85
+        chromaSubsampling: "4:4:4"
+        mozjpeg: true
+        optimizeCoding: true
+      png:
+        compressionLevel: 9
+        palette: true
+        quality: 90
+        colors: 256
+      printPreset:
+        resolution: 300
+        colorspace: cmyk
+        profile: Fogra39
+        quality: 100
+        density: 300
+        format: tiff
+
+persistence:
+  enabled: true
+  storageClass: gp3-encrypted
+  size: 50Gi
+  mountPath: /data
+  backup:
+    enabled: true
+    schedule: "0 0 * * *"
+    retention:
+      daily: 7
+      weekly: 4
+      monthly: 12
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 25s
+    labels:
+      release: prometheus
+  prometheusRule:
+    enabled: true
+    rules:
+      - alert: ContentServiceHighMemory
+        expr: container_memory_usage_bytes{container='content-service'} > 3.5e9
+        for: 5m
+        labels:
+          severity: warning
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 3
