@@ -1,0 +1,10 @@
+This file should be obtained from the official Google Fonts repository or a trusted CDN.
+Font file specifications:
+- Family: Roboto
+- Weight: 700 (Bold)
+- Style: Normal
+- Format: TTF
+- Unicode Range: U+0590-05FF (Hebrew)
+- License: Apache License 2.0
+
+The binary file should be placed at this exact path and used in conjunction with the typography and theme style configurations.
