@@ -1,0 +1,138 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base resources for the MyFamily platform
+resources:
+  # Core infrastructure components
+  - base/namespaces.yaml
+  - base/network-policies.yaml
+  - base/storage-classes.yaml
+  
+  # Service mesh configuration
+  - service-mesh/istio/values.yaml
+  
+  # Monitoring stack
+  - monitoring/prometheus/values.yaml
+  - monitoring/grafana/values.yaml
+  - monitoring/jaeger/values.yaml
+  - monitoring/elk/values.yaml
+  
+  # Security configurations
+  - security/pod-security-policies.yaml
+  - security/network-policies.yaml
+  
+  # Ingress and certificates
+  - ingress/nginx/values.yaml
+  - cert-manager/values.yaml
+  
+  # Application services
+  - services/api-gateway/values.yaml
+  - services/auth-service/values.yaml
+  - services/content-service/values.yaml
+  - services/gazette-service/values.yaml
+  - services/payment-service/values.yaml
+  - services/worker-service/values.yaml
+
+# Common labels for all resources
+commonLabels:
+  app.kubernetes.io/part-of: myfamily
+  app.kubernetes.io/managed-by: kustomize
+  security.istio.io/tlsMode: strict
+  sidecar.istio.io/inject: "true"
+  security.myfamily.io/compliance: pci-dss
+
+# Common annotations for all resources
+commonAnnotations:
+  maintainer: MyFamily DevOps
+  environment: production
+  security.myfamily.io/scan-status: verified
+  monitoring.myfamily.io/metrics: enabled
+
+# Strategic merge patches for production environment
+patches:
+  # Scale replicas for production workloads
+  - path: overlays/production/patches/replicas.yaml
+    target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/part-of=myfamily
+  
+  # Resource allocation for production
+  - path: overlays/production/patches/resources.yaml
+    target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/part-of=myfamily
+  
+  # Enhanced security configurations for PCI-DSS compliance
+  - path: overlays/production/patches/security.yaml
+    target:
+      kind: Deployment
+      labelSelector: security.myfamily.io/compliance=pci-dss
+
+# Configuration for namespace isolation
+namePrefix: myfamily-
+nameSuffix: -prod
+
+# Configure image pull policy for production
+images:
+  - name: api-gateway
+    newName: registry.myfamily.io/api-gateway
+    newTag: v1.0.0
+  - name: auth-service
+    newName: registry.myfamily.io/auth-service
+    newTag: v1.0.0
+  - name: content-service
+    newName: registry.myfamily.io/content-service
+    newTag: v1.0.0
+  - name: gazette-service
+    newName: registry.myfamily.io/gazette-service
+    newTag: v1.0.0
+  - name: payment-service
+    newName: registry.myfamily.io/payment-service
+    newTag: v1.0.0
+  - name: worker-service
+    newName: registry.myfamily.io/worker-service
+    newTag: v1.0.0
+
+# Configure resource quotas and limits
+configurations:
+  - configurations/resource-quotas.yaml
+
+# Configure network policies
+patchesStrategicMerge:
+  - overlays/production/network-policies/strict-mode.yaml
+  - overlays/production/network-policies/egress-control.yaml
+
+# Configure service mesh integration
+vars:
+  - name: ISTIO_GATEWAY
+    objref:
+      kind: Gateway
+      name: myfamily-gateway
+      apiVersion: networking.istio.io/v1beta1
+  - name: MONITORING_NAMESPACE
+    objref:
+      kind: Namespace
+      name: system
+      apiVersion: v1
+
+# Configure secrets management
+secretGenerator:
+  - name: database-credentials
+    files:
+      - secrets/production/db-credentials.env
+    type: Opaque
+  - name: api-keys
+    files:
+      - secrets/production/api-keys.env
+    type: Opaque
+
+# Configure ConfigMaps for application configuration
+configMapGenerator:
+  - name: app-config
+    files:
+      - configs/production/app-config.yaml
+    behavior: merge
+  - name: monitoring-config
+    files:
+      - configs/production/monitoring-config.yaml
+    behavior: merge
