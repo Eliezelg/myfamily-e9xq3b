@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "MyFamily",
+    "slug": "myfamily",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/images/logo.svg",
+    "userInterfaceStyle": "automatic",
+    "owner": "myfamily",
+    "splash": {
+      "image": "./src/assets/images/logo.svg",
+      "resizeMode": "contain",
+      "backgroundColor": "#2196F3"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/your-project-id"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.myfamily.app",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "NSCameraUsageDescription": "MyFamily needs access to your camera to upload photos for the family gazette",
+        "NSPhotoLibraryUsageDescription": "MyFamily needs access to your photo library to upload photos for the family gazette",
+        "NSLocationWhenInUseUsageDescription": "MyFamily uses your location for photo metadata and family event planning",
+        "UIRequiresFullScreen": true
+      }
+    },
+    "android": {
+      "package": "com.myfamily.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/logo.svg",
+        "backgroundColor": "#2196F3"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./src/assets/images/logo.svg"
+    },
+    "plugins": [
+      "expo-localization",
+      "expo-camera",
+      "expo-image-picker",
+      "expo-file-system",
+      "expo-location",
+      "expo-media-library"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    }
+  }
+}
