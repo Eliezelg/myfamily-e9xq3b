@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="MyFamily - Connect generations through personalized family gazettes">
+    <meta property="og:title" content="MyFamily - Family Connection Platform">
+    <meta property="og:description" content="Share moments with family through beautiful printed gazettes">
+
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' fonts.googleapis.com 'unsafe-inline'; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' *.amazonaws.com; script-src 'self' 'nonce-${CSP_NONCE}'; frame-ancestors 'none'; form-action 'self'">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
+
+    <!-- Preconnect to Critical Domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://s3.amazonaws.com" crossorigin>
+
+    <!-- Fonts Preloading -->
+    <link rel="preload" href="https://fonts.gstatic.com/s/roboto/v30/Roboto-Regular.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="https://fonts.gstatic.com/s/roboto/v30/Roboto-Bold.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="https://fonts.gstatic.com/s/notosanshebrew/v30/NotoSansHebrew-Regular.ttf" as="font" type="font/ttf" crossorigin>
+
+    <!-- Font Loading -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- PWA Support -->
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./assets/images/logo.svg">
+    <link rel="apple-touch-icon" href="./assets/images/logo.svg">
+
+    <title>MyFamily - Connect Generations</title>
+
+    <!-- Error Handling -->
+    <script nonce="${CSP_NONCE}">
+        window.onerror = function(msg, url, line, col, error) {
+            console.error('Global error:', { msg, url, line, col, error });
+            return false;
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+    </script>
+</head>
+<body>
+    <!-- Skip Navigation -->
+    <a href="#root" class="skip-link" aria-label="Skip to main content">Skip to main content</a>
+
+    <!-- Application Root -->
+    <div id="root" role="application" aria-label="MyFamily Application Root"></div>
+
+    <!-- Fallback Content -->
+    <noscript>
+        <div style="text-align: center; padding: 20px;">
+            <h1>JavaScript Required</h1>
+            <p>Please enable JavaScript to use MyFamily platform.</p>
+        </div>
+    </noscript>
+
+    <!-- Application Entry Point -->
+    <script type="module" src="./index.tsx" defer nonce="${CSP_NONCE}"></script>
+
+    <!-- Version Information -->
+    <script nonce="${CSP_NONCE}">
+        window.APP_VERSION = process.env.REACT_APP_VERSION || '1.0.0';
+    </script>
+</body>
+</html>
