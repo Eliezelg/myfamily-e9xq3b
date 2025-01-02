@@ -1,0 +1,70 @@
+node_modules
+
+# Build outputs
+dist
+
+# Test files and directories
+coverage
+*.test.ts
+*.test.tsx
+__tests__
+__mocks__
+cypress
+cypress.config.ts
+jest.config.ts
+
+# Environment and secrets
+.env
+.env.*
+
+# Version control
+.git
+.gitignore
+
+# Development configs
+.eslintrc.ts
+.prettierrc
+
+# Logs
+*.log
+
+# Documentation
+README.md
+
+# System files
+.DS_Store
+
+# IDE specific
+.idea
+.vscode
+
+# Debug files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cache directories
+.npm
+.eslintcache
+.stylelintcache
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Temporary files
+*.swp
+*.swo
+*~
+
+# Local development certificates
+*.pem
+*.key
+*.crt
+
+# Build process files
+webpack.config.ts
+tsconfig.json
+babel.config.js
