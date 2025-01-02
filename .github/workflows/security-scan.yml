@@ -1,0 +1,138 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly scan
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: read
+  security-events: write
+  actions: write
+
+jobs:
+  dependency-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd src/backend && npm ci
+          cd ../web && npm ci
+
+      - name: Run Snyk scan
+        uses: snyk/actions/node@v3
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+          sarif: true
+
+      - name: Upload dependency scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: snyk.sarif
+          category: dependency-scan
+
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build backend image
+        run: docker build -t myfamily-backend:${{ github.sha }} src/backend
+
+      - name: Build frontend image
+        run: docker build -t myfamily-frontend:${{ github.sha }} src/web
+
+      - name: Run Trivy scan - Backend
+        uses: aquasecurity/trivy-action@v0.11.0
+        with:
+          image-ref: myfamily-backend:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-backend.sarif'
+          severity: 'CRITICAL,HIGH'
+          vuln-type: 'os,library'
+
+      - name: Run Trivy scan - Frontend
+        uses: aquasecurity/trivy-action@v0.11.0
+        with:
+          image-ref: myfamily-frontend:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-frontend.sarif'
+          severity: 'CRITICAL,HIGH'
+          vuln-type: 'os,library'
+
+      - name: Upload container scan results - Backend
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: trivy-backend.sarif
+          category: container-scan-backend
+
+      - name: Upload container scan results - Frontend
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: trivy-frontend.sarif
+          category: container-scan-frontend
+
+  code-analysis:
+    name: Code Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript, typescript
+          queries: security-extended,security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: code-analysis
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: results/javascript.sarif
+          category: code-analysis
+
+  notify:
+    name: Notify Security Issues
+    needs: [dependency-scan, container-scan, code-analysis]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Send notification
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issueBody = `Security scan failed in workflow run: ${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Security Scan Failed',
+              body: issueBody,
+              labels: ['security', 'high-priority']
+            });
