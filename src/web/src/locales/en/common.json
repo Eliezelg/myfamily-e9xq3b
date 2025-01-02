@@ -1,0 +1,141 @@
+{
+  "auth": {
+    "login": {
+      "title": "Login to MyFamily",
+      "email": "Email Address",
+      "password": "Password",
+      "submit": "Login",
+      "forgotPassword": "Forgot Password?",
+      "register": "Create New Account",
+      "errors": {
+        "invalidCredentials": "The email or password you entered is incorrect. Please try again.",
+        "accountLocked": "Your account has been temporarily locked for security. Please reset your password or contact support.",
+        "tooManyAttempts": "Too many login attempts. Please try again in {minutes} minutes.",
+        "networkError": "Unable to connect. Please check your internet connection and try again."
+      },
+      "aria": {
+        "emailInput": "Enter your email address",
+        "passwordInput": "Enter your password",
+        "submitButton": "Click to log in to your account"
+      }
+    },
+    "register": {
+      "title": "Create Family Account",
+      "familyName": "Family Name",
+      "email": "Email Address",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Create Account",
+      "login": "Already have an account? Log in here",
+      "requirements": {
+        "password": "Password must contain at least 8 characters, including uppercase, lowercase, number, and special character",
+        "familyName": "Family name must be between 2 and 50 characters",
+        "email": "Please enter a valid email address"
+      },
+      "aria": {
+        "familyNameInput": "Enter your family name",
+        "emailInput": "Enter your email address",
+        "passwordInput": "Create a secure password",
+        "confirmPasswordInput": "Confirm your password"
+      }
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome to your family space, {name}",
+    "activeFamily": "Active Family",
+    "nextGazette": {
+      "title": "Next Family Gazette",
+      "daysLeft": "{days, plural, =1 {1 day left} other {# days left}}",
+      "photoCount": "{current} of {total} photos added",
+      "deadline": "Submission deadline: {date}",
+      "aria": {
+        "progressBar": "Gazette completion progress: {percent}%"
+      }
+    },
+    "familyPool": {
+      "title": "Family Pool",
+      "balance": "Current balance: ${amount}",
+      "addFunds": "Add Funds",
+      "lowBalance": "Low balance warning: Please add funds before next gazette",
+      "aria": {
+        "balanceAmount": "Your family pool balance is ${amount}"
+      }
+    }
+  },
+  "content": {
+    "upload": {
+      "title": "Share Family Moments",
+      "dragDrop": "Drag photos here or click to upload",
+      "maxPhotos": "Maximum {max} photos per gazette",
+      "selected": "{count, plural, =0 {No photos selected} =1 {1 photo selected} other {# photos selected}}",
+      "description": "Add a description (optional)",
+      "language": "Content Language",
+      "autoTranslate": "Automatically translate for family members",
+      "submit": "Share with Family",
+      "aria": {
+        "uploadZone": "Click or drag photos to upload",
+        "descriptionInput": "Add a description for your photos"
+      }
+    },
+    "preview": {
+      "title": "Content Preview",
+      "edit": "Edit Details",
+      "delete": "Remove Content",
+      "translate": "Manage Translations",
+      "confirmDelete": "Are you sure you want to remove this content? This action cannot be undone."
+    }
+  },
+  "gazette": {
+    "preview": {
+      "title": "Gazette Preview",
+      "layout": "Layout Options",
+      "layouts": {
+        "classic": "Classic Family Style",
+        "modern": "Modern Magazine",
+        "compact": "Compact Newsletter"
+      },
+      "save": "Save Draft",
+      "approve": "Approve for Print",
+      "aria": {
+        "layoutSelector": "Select gazette layout style",
+        "previewImage": "Preview of gazette page {page}"
+      }
+    }
+  },
+  "common": {
+    "buttons": {
+      "save": "Save Changes",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "back": "Go Back",
+      "next": "Continue",
+      "close": "Close",
+      "delete": "Delete",
+      "edit": "Edit",
+      "share": "Share"
+    },
+    "notifications": {
+      "success": "Success",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Information",
+      "aria": {
+        "closeNotification": "Click to dismiss notification"
+      }
+    },
+    "validation": {
+      "required": "This field is required",
+      "email": "Please enter a valid email address",
+      "password": {
+        "length": "Must be at least 8 characters",
+        "uppercase": "Must include an uppercase letter",
+        "lowercase": "Must include a lowercase letter",
+        "number": "Must include a number",
+        "special": "Must include a special character"
+      },
+      "match": "Passwords must match",
+      "maxLength": "Maximum {max} characters allowed",
+      "minLength": "Minimum {min} characters required"
+    }
+  }
+}
