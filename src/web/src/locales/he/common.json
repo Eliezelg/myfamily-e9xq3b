@@ -1,0 +1,88 @@
+{
+  "auth": {
+    "login": {
+      "title": "התחברות למשפחה שלי",
+      "email": "כתובת דואר אלקטרוני",
+      "password": "סיסמה",
+      "submit": "התחבר",
+      "forgotPassword": "שכחת סיסמה?",
+      "register": "צור חשבון חדש",
+      "oauth": {
+        "google": "התחבר עם Google",
+        "facebook": "התחבר עם Facebook",
+        "apple": "התחבר עם Apple"
+      },
+      "errors": {
+        "invalidCredentials": "דואר אלקטרוני או סיסמה לא חוקיים",
+        "accountLocked": "החשבון נעול",
+        "networkError": "שגיאת תקשורת, נסה שוב",
+        "serverError": "שגיאת מערכת, נסה שוב מאוחר יותר"
+      }
+    }
+  },
+  "payment": {
+    "tranzillia": {
+      "title": "תשלום באמצעות Tranzillia",
+      "cardNumber": "מספר כרטיס",
+      "expiry": "תוקף",
+      "cvv": "קוד אבטחה",
+      "holderName": "שם בעל הכרטיס",
+      "errors": {
+        "invalidCard": "מספר כרטיס לא תקין",
+        "expiredCard": "כרטיס פג תוקף",
+        "processingError": "שגיאה בעיבוד התשלום"
+      }
+    }
+  },
+  "validation": {
+    "network": {
+      "offline": "אין חיבור לאינטרנט",
+      "timeout": "זמן התגובה חרג מהמותר",
+      "serverError": "שגיאת שרת"
+    },
+    "system": {
+      "maintenance": "המערכת בתחזוקה",
+      "upgrade": "המערכת מתעדכנת",
+      "error": "שגיאת מערכת"
+    }
+  },
+  "notifications": {
+    "success": {
+      "upload": "התמונות הועלו בהצלחה",
+      "payment": "התשלום בוצע בהצלחה",
+      "save": "השינויים נשמרו בהצלחה"
+    },
+    "error": {
+      "upload": "שגיאה בהעלאת התמונות",
+      "payment": "שגיאה בביצוע התשלום",
+      "save": "שגיאה בשמירת השינויים"
+    }
+  },
+  "dates": {
+    "formats": {
+      "short": "dd/MM/yy",
+      "medium": "d בMMMM yyyy",
+      "long": "EEEE, d בMMMM yyyy"
+    },
+    "calendar": {
+      "hebrew": {
+        "months": [
+          "תשרי",
+          "חשון",
+          "כסלו",
+          "טבת",
+          "שבט",
+          "אדר"
+        ],
+        "holidays": [
+          "ראש השנה",
+          "יום כיפור",
+          "סוכות",
+          "חנוכה",
+          "פורים",
+          "פסח"
+        ]
+      }
+    }
+  }
+}
