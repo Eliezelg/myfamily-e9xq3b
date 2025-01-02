@@ -1,0 +1,214 @@
+version: "3.9"
+
+services:
+  # API Gateway Service
+  api-gateway:
+    build:
+      context: ./src/api-gateway
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3000:3000"
+      - "9229:9229"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DEBUG_PORT=9229
+      - LOG_LEVEL=debug
+    volumes:
+      - ./src/api-gateway:/app
+      - /app/node_modules
+    depends_on:
+      - auth-service
+      - content-service
+      - gazette-service
+      - payment-service
+    networks:
+      - myfamily_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./src/auth-service
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3001:3001"
+      - "9230:9230"
+    environment:
+      - NODE_ENV=development
+      - AUTH_SERVICE_PORT=3001
+      - DEBUG_PORT=9230
+      - LOG_LEVEL=debug
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./src/auth-service:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - myfamily_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Content Service
+  content-service:
+    build:
+      context: ./src/content-service
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3002:3002"
+      - "9231:9231"
+    environment:
+      - NODE_ENV=development
+      - CONTENT_SERVICE_PORT=3002
+      - DEBUG_PORT=9231
+      - LOG_LEVEL=debug
+      - MINIO_ENDPOINT=http://minio:9000
+    volumes:
+      - ./src/content-service:/app
+      - /app/node_modules
+      - content_temp:/tmp/sharp-cache
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    networks:
+      - myfamily_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Gazette Service
+  gazette-service:
+    build:
+      context: ./src/gazette-service
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3003:3003"
+      - "9232:9232"
+    environment:
+      - NODE_ENV=development
+      - GAZETTE_SERVICE_PORT=3003
+      - DEBUG_PORT=9232
+      - LOG_LEVEL=debug
+    volumes:
+      - ./src/gazette-service:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+      - content-service
+    networks:
+      - myfamily_network
+    restart: unless-stopped
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ./src/payment-service
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3004:3004"
+      - "9233:9233"
+    environment:
+      - NODE_ENV=development
+      - PAYMENT_SERVICE_PORT=3004
+      - DEBUG_PORT=9233
+      - LOG_LEVEL=debug
+    volumes:
+      - ./src/payment-service:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - myfamily_network
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_USER=myfamily
+      - POSTGRES_PASSWORD=development_password
+      - POSTGRES_DB=myfamily_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - myfamily_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myfamily"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:6.2-alpine
+    command: redis-server --appendonly yes --requirepass development_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - myfamily_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=myfamily
+      - MINIO_ROOT_PASSWORD=development_password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - myfamily_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  postgres_data:
+    name: myfamily_postgres_data
+  redis_data:
+    name: myfamily_redis_data
+  minio_data:
+    name: myfamily_minio_data
+  content_temp:
+    name: myfamily_content_temp
+
+networks:
+  myfamily_network:
+    name: myfamily_network
+    driver: bridge
