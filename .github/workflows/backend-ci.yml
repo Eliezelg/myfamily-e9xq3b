@@ -1,0 +1,143 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/backend/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/backend/**'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18.x'
+  WORKING_DIRECTORY: './src/backend'
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        id: npm-cache
+        with:
+          path: |
+            **/node_modules
+            ~/.npm
+          key: npm-deps-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-deps-
+
+      - name: Install dependencies
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm ci
+
+      - name: Lint code
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          npm run lint
+          npm run format -- --check
+
+      - name: Type check
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npx tsc --noEmit
+
+      - name: Run tests with coverage
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run test:coverage
+        env:
+          CI: true
+
+      - name: Build services
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run build
+
+      - name: Upload test coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: ${{ env.WORKING_DIRECTORY }}/coverage
+          retention-days: 14
+
+      - name: Cache build output
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.WORKING_DIRECTORY }}/dist
+          key: build-output-${{ github.sha }}
+
+  security-scan:
+    name: Security Analysis
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@v3
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+          command: test
+          working-directory: ${{ env.WORKING_DIRECTORY }}
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript
+          queries: security-extended
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:javascript"
+
+      - name: Check for known vulnerabilities
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm audit --audit-level=high
+
+      - name: Generate security report
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          echo "Security Scan Results" > security-report.txt
+          echo "===================" >> security-report.txt
+          echo "Snyk Scan: Complete" >> security-report.txt
+          echo "CodeQL Analysis: Complete" >> security-report.txt
+          echo "NPM Audit: Complete" >> security-report.txt
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-report
+          path: ${{ env.WORKING_DIRECTORY }}/security-report.txt
+          retention-days: 30
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
