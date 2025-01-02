@@ -1,0 +1,169 @@
+name: Deploy to Production
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  NAMESPACE: production
+  CLUSTER_NAME: myfamily-production
+  AWS_REGION: us-east-1
+  DOCKER_REGISTRY: myfamily
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:unit
+        
+      - name: Run integration tests
+        run: npm run test:integration
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+  security-scan:
+    name: Security Scanning
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/docker@v1
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: ${{ env.DOCKER_REGISTRY }}/api-gateway:${{ github.ref_name }}
+          args: --severity-threshold=high
+
+      - name: Run OWASP dependency check
+        run: |
+          npm audit --audit-level=high
+          npm audit fix --force --audit-level=high
+
+      - name: Run container vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_REGISTRY }}/api-gateway:${{ github.ref_name }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+  build:
+    name: Build and Push Images
+    needs: security-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure Docker credentials
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY_URL }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push API Gateway
+        run: |
+          docker build -t $DOCKER_REGISTRY/api-gateway:${{ github.ref_name }} \
+            --build-arg NODE_ENV=production \
+            --build-arg VERSION=${{ github.ref_name }} \
+            -f services/api-gateway/Dockerfile .
+          docker push $DOCKER_REGISTRY/api-gateway:${{ github.ref_name }}
+
+      - name: Build and push Auth Service
+        run: |
+          docker build -t $DOCKER_REGISTRY/auth-service:${{ github.ref_name }} \
+            --build-arg NODE_ENV=production \
+            --build-arg VERSION=${{ github.ref_name }} \
+            -f services/auth-service/Dockerfile .
+          docker push $DOCKER_REGISTRY/auth-service:${{ github.ref_name }}
+
+      - name: Build and push Content Service
+        run: |
+          docker build -t $DOCKER_REGISTRY/content-service:${{ github.ref_name }} \
+            --build-arg NODE_ENV=production \
+            --build-arg VERSION=${{ github.ref_name }} \
+            -f services/content-service/Dockerfile .
+          docker push $DOCKER_REGISTRY/content-service:${{ github.ref_name }}
+
+  deploy:
+    name: Deploy to Production
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
+
+      - name: Deploy API Gateway
+        run: |
+          helm upgrade --install api-gateway ./infrastructure/kubernetes/services/api-gateway \
+            --namespace $NAMESPACE \
+            --set image.tag=${{ github.ref_name }} \
+            --values ./infrastructure/kubernetes/services/api-gateway/values.yaml \
+            --atomic --timeout 10m
+
+      - name: Deploy Auth Service
+        run: |
+          helm upgrade --install auth-service ./infrastructure/kubernetes/services/auth-service \
+            --namespace $NAMESPACE \
+            --set image.tag=${{ github.ref_name }} \
+            --values ./infrastructure/kubernetes/services/auth-service/values.yaml \
+            --atomic --timeout 10m
+
+      - name: Deploy Content Service
+        run: |
+          helm upgrade --install content-service ./infrastructure/kubernetes/services/content-service \
+            --namespace $NAMESPACE \
+            --set image.tag=${{ github.ref_name }} \
+            --values ./infrastructure/kubernetes/services/content-service/values.yaml \
+            --atomic --timeout 10m
+
+      - name: Verify deployments
+        run: |
+          kubectl rollout status deployment/api-gateway -n $NAMESPACE
+          kubectl rollout status deployment/auth-service -n $NAMESPACE
+          kubectl rollout status deployment/content-service -n $NAMESPACE
+
+      - name: Run smoke tests
+        run: |
+          ./scripts/smoke-tests.sh -e production
+
+      - name: Notify deployment status
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
