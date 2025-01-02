@@ -1,0 +1,125 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['src/web/mobile/**']
+  pull_request:
+    branches: [main, develop]
+    paths: ['src/web/mobile/**']
+
+env:
+  NODE_VERSION: '18.x'
+  WORKING_DIRECTORY: 'src/web/mobile'
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+  COVERAGE_THRESHOLD: '80'
+
+jobs:
+  build_and_test:
+    name: Build & Test (${{ matrix.platform }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        platform: [ios, android]
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ env.EXPO_TOKEN }}
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        id: npm-cache
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          npm ci
+          npm audit fix
+
+      - name: TypeScript type check
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npx tsc --noEmit
+
+      - name: Lint check
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          npx eslint . --ext .js,.jsx,.ts,.tsx
+          npx prettier --check "**/*.{js,jsx,ts,tsx,json,md}"
+
+      - name: Run tests
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          npm test -- --coverage --coverageThreshold='{"global":{"branches":${{ env.COVERAGE_THRESHOLD }},"functions":${{ env.COVERAGE_THRESHOLD }},"lines":${{ env.COVERAGE_THRESHOLD }},"statements":${{ env.COVERAGE_THRESHOLD }}}}' --ci --maxWorkers=2
+
+      - name: Upload test coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report-${{ matrix.platform }}
+          path: ${{ env.WORKING_DIRECTORY }}/coverage
+          retention-days: 14
+
+      - name: Validate Expo config
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npx expo-doctor
+
+      - name: Build Expo app
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          if [ "${{ matrix.platform }}" = "ios" ]; then
+            npx eas-cli build --platform ios --profile preview --non-interactive
+          else
+            npx eas-cli build --platform android --profile preview --non-interactive
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-build-${{ matrix.platform }}
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/**/*.ipa
+            ${{ env.WORKING_DIRECTORY }}/**/*.apk
+          retention-days: 14
+
+      - name: Generate build report
+        if: always()
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          echo "Build Summary for ${{ matrix.platform }}" > build-report-${{ matrix.platform }}.txt
+          echo "Timestamp: $(date)" >> build-report-${{ matrix.platform }}.txt
+          echo "Branch: ${{ github.ref }}" >> build-report-${{ matrix.platform }}.txt
+          echo "Commit: ${{ github.sha }}" >> build-report-${{ matrix.platform }}.txt
+
+      - name: Upload build report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-report-${{ matrix.platform }}
+          path: ${{ env.WORKING_DIRECTORY }}/build-report-${{ matrix.platform }}.txt
+          retention-days: 14
