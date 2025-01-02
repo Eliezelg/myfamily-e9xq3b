@@ -1,0 +1,97 @@
+# Jaeger Helm Chart Values
+# Chart Version: jaegertracing/jaeger@0.71.0
+# Purpose: Production configuration for distributed tracing
+
+# Disable all-in-one deployment mode since we're using production setup
+allInOne:
+  enabled: false
+
+# Configure highly available collectors
+collector:
+  enabled: true
+  replicaCount: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+  service:
+    type: ClusterIP
+    ports:
+      - name: jaeger-collector-grpc
+        port: 14250
+        protocol: TCP
+
+# Configure query service with secure ingress
+query:
+  enabled: true
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+  service:
+    type: ClusterIP
+    port: 16686
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - jaeger.myfamily.com
+    tls:
+      - secretName: jaeger-tls
+        hosts:
+          - jaeger.myfamily.com
+
+# Configure Jaeger agents as DaemonSet
+agent:
+  enabled: true
+  daemonset:
+    enabled: true
+  resources:
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+# Configure Elasticsearch storage backend
+storage:
+  type: elasticsearch
+  elasticsearch:
+    host: elasticsearch-master.system.svc.cluster.local
+    port: 9200
+    scheme: http
+    user: elastic
+    usePassword: true
+    indexPrefix: jaeger
+    createIndexTemplates: true
+
+# Enable Prometheus monitoring integration
+serviceMonitor:
+  enabled: true
+  additionalLabels:
+    prometheus: myfamily-monitoring
+
+# Configure network policies for security
+networkPolicy:
+  enabled: true
+  collector:
+    ingressRules:
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                monitoring: enabled
