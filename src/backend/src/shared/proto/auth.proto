@@ -1,0 +1,195 @@
+syntax = "proto3";
+
+package myfamily.auth;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./auth";
+option java_package = "com.myfamily.auth";
+option java_multiple_files = true;
+
+// User role enumeration aligned with backend definitions
+enum UserRole {
+  UNSPECIFIED = 0;
+  SYSTEM_ADMIN = 1;
+  FAMILY_ADMIN = 2;
+  CONTENT_CONTRIBUTOR = 3;
+  MEMBER = 4;
+}
+
+// User status enumeration for account state management
+enum UserStatus {
+  STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  PENDING_VERIFICATION = 2;
+  SUSPENDED = 3;
+  ARCHIVED = 4;
+}
+
+// Extended error codes for authentication service
+enum ErrorCode {
+  ERROR_UNSPECIFIED = 0;
+  INVALID_CREDENTIALS = 1;
+  USER_NOT_FOUND = 2;
+  EMAIL_ALREADY_EXISTS = 3;
+  INVALID_TOKEN = 4;
+  TOKEN_EXPIRED = 5;
+  TWO_FACTOR_REQUIRED = 6;
+  INVALID_2FA_CODE = 7;
+  OAUTH_FAILED = 8;
+  ACCOUNT_SUSPENDED = 9;
+  RATE_LIMIT_EXCEEDED = 10;
+  INVALID_LANGUAGE_CODE = 11;
+}
+
+// User preferences message for customization settings
+message UserPreferences {
+  string language = 1;
+  bool email_notifications = 2;
+  string timezone = 3;
+  string date_format = 4;
+  CommunicationPreferences communication_preferences = 5;
+}
+
+message CommunicationPreferences {
+  bool email_updates = 1;
+  bool gazette_notifications = 2;
+  bool family_updates = 3;
+  bool marketing_communications = 4;
+}
+
+// User information message
+message UserInfo {
+  string user_id = 1;
+  string email = 2;
+  string first_name = 3;
+  string last_name = 4;
+  UserRole role = 5;
+  UserStatus status = 6;
+  string language = 7;
+  bool two_factor_enabled = 8;
+  google.protobuf.Timestamp last_login_at = 9;
+  UserPreferences preferences = 10;
+}
+
+// Login request with rate limiting support
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  string ip_address = 3;
+  string device_info = 4;
+}
+
+// Enhanced login response with user preferences
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  UserRole role = 3;
+  bool two_factor_required = 4;
+  UserPreferences preferences = 5;
+  google.protobuf.Timestamp token_expiry = 6;
+  ErrorCode error = 7;
+  string error_message = 8;
+}
+
+// Registration request message
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string language = 5;
+  string timezone = 6;
+}
+
+// Token validation request
+message TokenValidationRequest {
+  string token = 1;
+}
+
+// Enhanced token validation response
+message TokenValidationResponse {
+  bool valid = 1;
+  UserInfo user_info = 2;
+  google.protobuf.Timestamp expiry_time = 3;
+  int32 remaining_time_seconds = 4;
+  ErrorCode error = 5;
+}
+
+// Token refresh request
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+// Google OAuth login request
+message GoogleOAuthRequest {
+  string auth_code = 1;
+  string redirect_uri = 2;
+}
+
+// 2FA enablement request
+message Enable2FARequest {
+  string user_id = 1;
+  string phone_number = 2;
+}
+
+// 2FA verification request
+message Verify2FARequest {
+  string user_id = 1;
+  string verification_code = 2;
+}
+
+// User preferences update request
+message UpdatePreferencesRequest {
+  string user_id = 1;
+  UserPreferences preferences = 2;
+}
+
+// Logout request
+message LogoutRequest {
+  string session_id = 1;
+  string user_id = 2;
+}
+
+// Email verification request
+message EmailVerificationRequest {
+  string verification_token = 1;
+}
+
+// Generic response message
+message GenericResponse {
+  bool success = 1;
+  ErrorCode error = 2;
+  string error_message = 3;
+}
+
+// Authentication service definition
+service AuthService {
+  // User authentication
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  
+  // User registration
+  rpc Register(RegisterRequest) returns (GenericResponse) {}
+  
+  // Token validation
+  rpc ValidateToken(TokenValidationRequest) returns (TokenValidationResponse) {}
+  
+  // Token refresh
+  rpc RefreshToken(RefreshTokenRequest) returns (LoginResponse) {}
+  
+  // OAuth integration
+  rpc GoogleOAuthLogin(GoogleOAuthRequest) returns (LoginResponse) {}
+  
+  // Two-factor authentication
+  rpc Enable2FA(Enable2FARequest) returns (GenericResponse) {}
+  rpc Verify2FA(Verify2FARequest) returns (LoginResponse) {}
+  
+  // User preferences
+  rpc UpdateUserPreferences(UpdatePreferencesRequest) returns (GenericResponse) {}
+  
+  // Session management
+  rpc LogoutSession(LogoutRequest) returns (GenericResponse) {}
+  
+  // Email verification
+  rpc ValidateEmailToken(EmailVerificationRequest) returns (GenericResponse) {}
+}
