@@ -1,0 +1,222 @@
+syntax = "proto3";
+
+package myfamily.payment;
+
+import "google/protobuf/timestamp.proto";
+
+// Supported payment methods across regions
+enum PaymentMethod {
+  STRIPE = 0;           // International credit card payments
+  TRANZILLIA = 1;       // Israeli market specific processor
+  POOL = 2;             // Internal family pool balance
+  STRIPE_SEPA = 3;      // European bank transfers
+  STRIPE_BACS = 4;      // UK bank transfers
+  STRIPE_ACH = 5;       // US bank transfers
+}
+
+// Detailed payment transaction statuses
+enum PaymentStatus {
+  PENDING = 0;              // Initial payment state
+  PROCESSING = 1;          // Payment being processed
+  COMPLETED = 2;           // Successfully processed
+  FAILED = 3;              // Processing failed
+  REFUNDED = 4;            // Fully refunded
+  PARTIALLY_REFUNDED = 5;  // Partial refund processed
+  DISPUTED = 6;            // Payment under dispute
+  CANCELLED = 7;           // Payment cancelled
+}
+
+// Family pool operational statuses
+enum PoolStatus {
+  ACTIVE = 0;               // Pool is operational
+  SUSPENDED = 1;            // Pool temporarily suspended
+  CLOSED = 2;              // Pool permanently closed
+  PENDING_VERIFICATION = 3; // Awaiting verification
+}
+
+// Enhanced payment transaction details with regional support
+message Payment {
+  string id = 1;
+  string family_id = 2;
+  double amount = 3;
+  string currency = 4;
+  PaymentMethod method = 5;
+  PaymentStatus status = 6;
+  map<string, string> metadata = 7;
+  string region = 8;
+  string processor_reference = 9;
+  repeated string related_transactions = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+// Comprehensive family payment pool details with automation
+message FamilyPool {
+  string id = 1;
+  string family_id = 2;
+  double balance = 3;
+  string currency = 4;
+  PoolStatus status = 5;
+  google.protobuf.Timestamp last_top_up_date = 6;
+  bool auto_top_up_enabled = 7;
+  double auto_top_up_threshold = 8;
+  double auto_top_up_amount = 9;
+  PaymentMethod preferred_payment_method = 10;
+  double utilization_rate = 11;
+  map<string, string> pool_settings = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+// Request and response messages for payment operations
+message ProcessPaymentRequest {
+  Payment payment = 1;
+}
+
+message ProcessPaymentResponse {
+  Payment payment = 1;
+  string transaction_id = 2;
+  string receipt_url = 3;
+}
+
+message RefundRequest {
+  string payment_id = 1;
+  double amount = 2;
+  string reason = 3;
+}
+
+message RefundResponse {
+  Payment original_payment = 1;
+  Payment refund_payment = 2;
+}
+
+message ValidatePaymentMethodRequest {
+  PaymentMethod method = 1;
+  string region = 2;
+  string currency = 3;
+}
+
+message ValidatePaymentMethodResponse {
+  bool is_valid = 1;
+  repeated string supported_currencies = 2;
+  repeated string restrictions = 3;
+}
+
+message TransactionHistoryRequest {
+  string family_id = 1;
+  google.protobuf.Timestamp start_date = 2;
+  google.protobuf.Timestamp end_date = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+}
+
+message TransactionHistoryResponse {
+  repeated Payment transactions = 1;
+  string next_page_token = 2;
+  int32 total_count = 3;
+}
+
+// Pool management request and response messages
+message CreatePoolRequest {
+  string family_id = 1;
+  string currency = 2;
+  PaymentMethod preferred_payment_method = 3;
+  map<string, string> initial_settings = 4;
+}
+
+message CreatePoolResponse {
+  FamilyPool pool = 1;
+}
+
+message GetPoolBalanceRequest {
+  string family_id = 1;
+}
+
+message GetPoolBalanceResponse {
+  FamilyPool pool = 1;
+  double available_balance = 2;
+  double pending_charges = 3;
+}
+
+message TopUpPoolRequest {
+  string family_id = 1;
+  double amount = 2;
+  PaymentMethod payment_method = 3;
+}
+
+message TopUpPoolResponse {
+  FamilyPool updated_pool = 1;
+  Payment payment = 2;
+}
+
+message DeductFromPoolRequest {
+  string family_id = 1;
+  double amount = 2;
+  string purpose = 3;
+}
+
+message DeductFromPoolResponse {
+  FamilyPool updated_pool = 1;
+  Payment payment = 2;
+}
+
+message ConfigureAutoTopUpRequest {
+  string family_id = 1;
+  bool enabled = 2;
+  double threshold = 3;
+  double amount = 4;
+  PaymentMethod payment_method = 5;
+}
+
+message ConfigureAutoTopUpResponse {
+  FamilyPool updated_pool = 1;
+}
+
+message GetPoolUtilizationRequest {
+  string family_id = 1;
+  google.protobuf.Timestamp start_date = 2;
+  google.protobuf.Timestamp end_date = 3;
+}
+
+message GetPoolUtilizationResponse {
+  double utilization_rate = 1;
+  double total_deposits = 2;
+  double total_withdrawals = 3;
+  repeated Payment transactions = 4;
+}
+
+// Payment processing service
+service PaymentService {
+  // Process a new payment transaction
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse) {}
+  
+  // Handle payment refunds
+  rpc HandleRefund(RefundRequest) returns (RefundResponse) {}
+  
+  // Validate payment method for region and currency
+  rpc ValidatePaymentMethod(ValidatePaymentMethodRequest) returns (ValidatePaymentMethodResponse) {}
+  
+  // Retrieve transaction history
+  rpc GetTransactionHistory(TransactionHistoryRequest) returns (TransactionHistoryResponse) {}
+}
+
+// Family pool management service
+service PoolService {
+  // Create a new family pool
+  rpc CreatePool(CreatePoolRequest) returns (CreatePoolResponse) {}
+  
+  // Get current pool balance and status
+  rpc GetPoolBalance(GetPoolBalanceRequest) returns (GetPoolBalanceResponse) {}
+  
+  // Add funds to pool
+  rpc TopUpPool(TopUpPoolRequest) returns (TopUpPoolResponse) {}
+  
+  // Deduct funds from pool
+  rpc DeductFromPool(DeductFromPoolRequest) returns (DeductFromPoolResponse) {}
+  
+  // Configure automatic top-up settings
+  rpc ConfigureAutoTopUp(ConfigureAutoTopUpRequest) returns (ConfigureAutoTopUpResponse) {}
+  
+  // Get pool utilization metrics
+  rpc GetPoolUtilization(GetPoolUtilizationRequest) returns (GetPoolUtilizationResponse) {}
+}
