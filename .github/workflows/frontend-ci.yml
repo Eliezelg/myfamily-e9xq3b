@@ -1,0 +1,159 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['src/web/**']
+  pull_request:
+    branches: [main, develop]
+    paths: ['src/web/**']
+
+env:
+  NODE_VERSION: '18.x'
+  WORKING_DIRECTORY: 'src/web'
+  COVERAGE_THRESHOLD: '80'
+  BUILD_TIMEOUT: '15'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+  checks: write
+
+jobs:
+  build_and_test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ env.BUILD_TIMEOUT }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        id: npm-cache
+        with:
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/node_modules
+            ${{ env.WORKING_DIRECTORY }}/.next/cache
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install Dependencies
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          npm ci --audit
+          npm audit fix
+
+      - name: Type Check
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run type-check
+
+      - name: Lint Code
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run lint
+
+      - name: Run Unit Tests
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          npm run test:coverage
+          
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: ${{ env.WORKING_DIRECTORY }}/coverage
+          retention-days: 14
+
+      - name: Check Coverage Threshold
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+          if (( $(echo "$COVERAGE < ${{ env.COVERAGE_THRESHOLD }}" | bc -l) )); then
+            echo "Coverage ($COVERAGE%) is below threshold (${{ env.COVERAGE_THRESHOLD }}%)"
+            exit 1
+          fi
+
+      - name: Build Production
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Cache Build
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/dist
+            ${{ env.WORKING_DIRECTORY }}/.next
+          key: ${{ runner.os }}-build-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-build
+          path: ${{ env.WORKING_DIRECTORY }}/dist
+          retention-days: 14
+
+      - name: Run E2E Tests
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run test:e2e
+        env:
+          CYPRESS_CACHE_FOLDER: ${{ env.WORKING_DIRECTORY }}/.cypress/cache
+
+      - name: Upload E2E Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-results
+          path: ${{ env.WORKING_DIRECTORY }}/cypress/videos
+          retention-days: 14
+
+      - name: Run Accessibility Tests
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run test:a11y
+
+      - name: Bundle Analysis
+        if: github.event_name == 'pull_request'
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run analyze
+
+      - name: Upload Bundle Analysis
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle-analysis
+          path: ${{ env.WORKING_DIRECTORY }}/stats.json
+          retention-days: 14
+
+    outputs:
+      coverage: ${{ steps.coverage.outputs.coverage }}
+      build-hash: ${{ github.sha }}
+
+  notify:
+    needs: build_and_test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Build Status
+        if: needs.build_and_test.result != 'success'
+        run: |
+          echo "Build failed or was cancelled"
+          exit 1
