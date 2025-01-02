@@ -1,0 +1,155 @@
+# ELK Stack Helm Values Configuration
+# Version: 7.17.3
+# Purpose: Production-grade centralized logging with high availability and security
+
+# Elasticsearch Configuration
+elasticsearch:
+  # High availability configuration with 3 replicas
+  replicas: 3
+  image:
+    repository: docker.elastic.co/elasticsearch/elasticsearch
+    tag: 7.17.3
+    pullPolicy: IfNotPresent
+  
+  # Persistent storage configuration
+  persistence:
+    enabled: true
+    storageClass: gp3-encrypted
+    size: 100Gi
+    backup:
+      enabled: true
+      schedule: "0 2 * * *"
+      repository: s3-backup
+
+  # Resource allocation for production workloads
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 4Gi
+    limits:
+      cpu: 2000m
+      memory: 8Gi
+
+  # Security configuration
+  security:
+    enabled: true
+    tls:
+      enabled: true
+      certificateSecret: es-tls
+    audit:
+      enabled: true
+      logLevel: INFO
+
+  # Prometheus monitoring integration
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 25s
+
+# Logstash Configuration
+logstash:
+  # High availability with 2 replicas
+  replicas: 2
+  image:
+    repository: docker.elastic.co/logstash/logstash
+    tag: 7.17.3
+    pullPolicy: IfNotPresent
+
+  # Persistent storage for log processing
+  persistence:
+    enabled: true
+    storageClass: gp3-encrypted
+    size: 20Gi
+
+  # Resource allocation
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 1000m
+      memory: 4Gi
+
+  # Pipeline configuration
+  pipelines:
+    main:
+      input:
+        beats:
+          port: 5044
+          ssl: true
+      filters:
+        - grok:
+            match:
+              message: "%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:level} %{GREEDYDATA:message}"
+        - date:
+            match: ["timestamp"]
+            target: "@timestamp"
+      output:
+        elasticsearch:
+          hosts: ["elasticsearch-master:9200"]
+          index: "myfamily-logs-%{+YYYY.MM.dd}"
+          ssl: true
+          template:
+            name: myfamily-logs
+            overwrite: true
+
+# Kibana Configuration
+kibana:
+  # High availability with 2 replicas
+  replicas: 2
+  image:
+    repository: docker.elastic.co/kibana/kibana
+    tag: 7.17.3
+    pullPolicy: IfNotPresent
+
+  # Resource allocation
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+  # Security configuration
+  security:
+    enabled: true
+    tls:
+      enabled: true
+
+  # Ingress configuration
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - kibana.myfamily.com
+    tls:
+      - secretName: kibana-tls
+        hosts:
+          - kibana.myfamily.com
+
+  # Prometheus monitoring integration
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 25s
+
+# Network Policy Configuration
+networkPolicy:
+  enabled: true
+  ingress:
+    allowed:
+      - namespaces:
+          - production
+          - staging
+          - system
+  egress:
+    allowed:
+      - ports:
+          - port: 9200
+            protocol: TCP
+          - port: 5044
+            protocol: TCP
