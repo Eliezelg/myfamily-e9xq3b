@@ -1,0 +1,50 @@
+# AWS EBS CSI Driver version: v1.12.0
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3-encrypted
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+    eks.amazonaws.com/component: "storage"
+    storage.k8s.io/performance-tier: "standard"
+    storage.k8s.io/encryption-type: "aes-256-gcm"
+    storage.k8s.io/monitoring-enabled: "true"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  encrypted: "true"
+  kmsKeyId: "${aws_kms_key_id}"
+  fsType: ext4
+  iopsPerGB: "3000"
+  throughput: "125"
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+mountOptions:
+  - noatime
+  - nodiratime
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: io1-encrypted
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    eks.amazonaws.com/component: "storage"
+    storage.k8s.io/performance-tier: "premium"
+    storage.k8s.io/encryption-type: "aes-256-gcm"
+    storage.k8s.io/monitoring-enabled: "true"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: io1
+  encrypted: "true"
+  kmsKeyId: "${aws_kms_key_id}"
+  fsType: ext4
+  iopsPerGB: "50"
+  throughput: "1000"
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+mountOptions:
+  - noatime
+  - nodiratime
