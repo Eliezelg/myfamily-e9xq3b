@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: List
+items:
+  # Production namespace for application workloads
+  - apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: production
+      labels:
+        # Environment identifier
+        environment: production
+        # Enable Istio service mesh injection
+        istio-injection: enabled
+        # Enable Prometheus monitoring
+        monitoring: enabled
+        # High security tier for production workloads
+        security-tier: high
+        # Enable automated backups
+        backup-enabled: "true"
+
+  # Staging namespace for pre-production testing
+  - apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: staging
+      labels:
+        # Environment identifier
+        environment: staging
+        # Enable Istio service mesh injection
+        istio-injection: enabled
+        # Enable Prometheus monitoring
+        monitoring: enabled
+        # Medium security tier for staging workloads
+        security-tier: medium
+        # Enable automated backups
+        backup-enabled: "true"
+
+  # System namespace for platform components
+  - apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: system
+      labels:
+        # Environment identifier
+        environment: system
+        # Enable Istio service mesh injection
+        istio-injection: enabled
+        # Enable Prometheus monitoring
+        monitoring: enabled
+        # High security tier for system components
+        security-tier: high
+        # Enable automated backups
+        backup-enabled: "true"
