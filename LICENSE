@@ -1,0 +1,115 @@
+Copyright (c) 2024 MyFamily Platform
+All rights reserved.
+
+DEFINITIONS:
+"Software" refers to the MyFamily digital-to-print platform, including its digital platform, content processing pipeline, and production system components designed for multi-generational family communication.
+
+"Users" are categorized as:
+- Family Administrators: Users managing family accounts and content
+- Contributors: Family members providing content
+- Recipients: Elderly relatives receiving printed gazettes
+
+"Service Components" include:
+- Digital Platform: Web and mobile applications
+- Print Services: Professional printing and distribution
+- Payment Processing: Family pool payment management
+- Geographic Scope: Israel (primary), Europe, North America, Australia
+- Supported Languages: 8 languages including Hebrew and English
+
+GRANT OF LICENSE:
+Subject to the terms and conditions of this License, you are hereby granted a worldwide, non-exclusive, non-transferable license to:
+1. Use the Software for commercial family communication purposes
+2. Share family content through the platform
+3. Authorize print production of family gazettes
+4. Distribute content across supported geographic regions
+5. Utilize platform translation services
+
+DATA PRIVACY AND PROTECTION:
+The Software implements and requires compliance with:
+1. GDPR (EU 2016/679) for EU data subjects
+2. CCPA for California residents
+3. Family Data Ownership:
+   - Families retain ownership of all uploaded content
+   - Platform maintains processing rights for service delivery
+4. Minor Protection:
+   - Parental consent required for users under 16
+   - Special data handling protections
+5. Elderly User Safeguards:
+   - Simplified consent mechanisms
+   - Accessible format requirements
+6. Data Retention:
+   - Active content: Duration of subscription
+   - Archived content: 24 months post-termination
+   - Payment records: As required by law
+
+THIRD-PARTY SERVICES INTEGRATION:
+1. Print Partners:
+   - Quality standards compliance
+   - Confidentiality requirements
+2. Payment Processors:
+   - PCI DSS compliance
+   - Multi-currency support
+3. Cloud Services:
+   - AWS service terms incorporation
+   - Data residency compliance
+4. API Integration:
+   - Rate limiting adherence
+   - Security requirements
+5. Content Delivery:
+   - Geographic distribution rights
+   - Quality of service standards
+
+LIMITATIONS:
+1. Content Redistribution:
+   - Limited to authorized family members
+   - No commercial redistribution
+2. API Usage:
+   - Internal family use only
+   - No public API access
+3. Geographic Restrictions:
+   - Service available in supported regions only
+4. Commercial Limitations:
+   - Single family unit usage
+   - No resale or white-labeling
+5. Modifications:
+   - No software modifications permitted
+   - Content formatting preservation required
+
+WARRANTY AND LIABILITY:
+1. Service Level Commitments:
+   - 99.9% platform uptime
+   - 100% gazette delivery accuracy
+2. Print Quality:
+   - Professional print standards
+   - Color accuracy guarantees
+3. Data Protection:
+   - Industry standard security measures
+   - Regular security audits
+4. Liability Limitations:
+   - Limited to subscription fees paid
+   - No consequential damages
+5. Warranty Disclaimers:
+   - PROVIDED "AS IS"
+   - No implied warranties
+
+TERMINATION:
+1. Termination Triggers:
+   - License violation
+   - Payment default
+   - Service discontinuation
+2. Post-Termination Data:
+   - 90-day export period
+   - Secure data deletion
+3. Content Preservation:
+   - Digital archive access
+   - Print copy retention rights
+4. Refund Policy:
+   - Pro-rata refunds for unused service
+   - Print order completion guarantee
+5. Appeals:
+   - 30-day appeal window
+   - Written appeal process
+
+This License shall be governed by and construed in accordance with the laws of Israel, without regard to its conflict of law provisions.
+
+For questions about this License, contact: legal@myfamily-platform.com
