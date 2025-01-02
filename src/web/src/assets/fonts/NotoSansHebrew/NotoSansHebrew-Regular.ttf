@@ -1,0 +1,13 @@
+[Binary TTF font file content would be here - Cannot be represented in text format]
+
+Font Configuration Details:
+- Font Family: Noto Sans Hebrew
+- Style: Regular
+- Weight: 400
+- Version: 4.5.0
+- Unicode Range: U+0590-05FF, U+FB1D-FB4F (Hebrew character set)
+- Format: TrueType Font (TTF)
+- Optimization: Subsetted for Hebrew characters only
+- Font Display: swap
+- Cache Control: public, max-age=31536000, immutable
+- Content-Type: font/ttf
